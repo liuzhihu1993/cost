@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fh.dao.ReportDao">
+
+	<!-- 按月份统计薪资发放情况 -->
+	<select id="salaryMonthReport" resultType="Map">
+	select sum(x.payment_money) total,x.mdate
+
+	from (
+	select s.*,date_format(s.payment_time,'%Y-%m')  mdate
+	
+	from salary_payment s  ) x
+	
+	group by x.mdate 
+	
+	order by x.mdate
+	</select>
+	
+	<!-- 按月分统计报销情况 -->
+	<select id="expenseMonthReport" resultType="Map">
+	select sum(x.expense_total) as total,x.mdate
+	
+	from (
+	SELECT
+	a.expense_total,
+	date_format(a.expense_time,'%Y-%m')  mdate,
+	a.expense_state
+	from expense_account a where a.expense_state='3') x
+	
+	group by x.mdate 
+	order by x.mdate 
+	
+	</select>
+	
+	<!-- 根据费用的类别统计报销情况 -->
+	<select id="expenseCostReport" resultType="Map">
+	select x.total,y.cost_name from (
+	select  sum(a.expense_details_amount) total,a.cost_id
+	from 
+	(select * from expense_details  where expense_id in (
+	select  expense_id from expense_account where expense_state='3') 
+	) a
+	group by a.cost_id ) x ,cost_info y 
+	where x.cost_id = y.cost_id
+	</select>
+	
+</mapper>

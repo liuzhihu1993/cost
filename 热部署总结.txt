@@ -1,0 +1,24 @@
+配置热部署
+1.给tomcat配置账号密码,找到tomcat-users.xml配置文件
+  <role rolename="manager-gui"/>
+  <role rolename="manager-script"/>
+  <user username="admin" password="123" roles="manager-gui,manager-script"/>
+2. 配置pom.xml文件,添加插件(第一次需要下载jar)	
+  <build>
+    <finalName>cost</finalName>
+    <plugins>
+    	<plugin>
+    		<groupId>org.apache.tomcat.maven</groupId>
+    		<artifactId>tomcat7-maven-plugin</artifactId>
+    		<version>2.2</version>
+    		<configuration>
+    			<url>http://localhost:8080/manager/text</url>
+    			<server>tomcat</server>
+    			<username>admin</username>
+    			<password>123</password>
+    		</configuration>
+    	</plugin>
+    </plugins>
+ 3.部署到tomcat:(第一次部署需要下载jar)   
+ 	tomcat7:deploy 存在，则不再重新部署
+ 	tomcat7:redeploy 每次都重新部署

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fh.dao.SalaryPaymentDao">
+
+	<resultMap type="SalaryPayment" id="salarymap">
+		<id property="paymentId" column="payment_id" />
+		<result property="userId" column="user_id" />
+		<result property="userName" column="user_name" />
+		<result property="paymentTime" column="payment_time" />
+		<result property="paymentMoney" column="payment_money" />
+	</resultMap>
+
+	<!-- 分页查询 -->
+	<select id="list" parameterType="SalaryPayment" resultMap="salarymap">
+		select a.*,b.user_name from salary_payment a,user_info b
+		where
+		a.user_id = b.user_id
+		<if test="userName!=null and userName!=''">
+			and b.user_name like #{userName}
+		</if>
+		<if test="paymentTime!=null">
+			and a.payment_time = #{paymentTime}
+		</if>
+
+		order by payment_id desc
+
+		<if test="start!=-1">
+			limit #{start},#{length}
+		</if>
+
+	</select>
+
+	<!-- 返回总记录数 -->
+	<select id="getcount" parameterType="SalaryPayment" resultType="Long">
+		select count(1) from salary_payment a,user_info b
+		where a.user_id =
+		b.user_id
+		<if test="userName!=null and userName!=''">
+			and b.user_name like #{userName}
+		</if>
+		<if test="paymentTime!=null">
+			and a.payment_time = #{paymentTime}
+		</if>
+
+	</select>
+
+	<!-- 添加薪资发放记录 -->
+	<insert id="add" parameterType="SalaryPayment">
+		insert into salary_payment
+		(user_id,payment_time,payment_money)
+		values(#{userId},#{paymentTime},#{paymentMoney})
+	</insert>
+
+</mapper>

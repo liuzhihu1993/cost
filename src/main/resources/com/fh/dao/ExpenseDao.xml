@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fh.dao.ExpenseDao">
+
+	<resultMap type="ExpenseAccount" id="eamap">
+		<id property="expenseId" column="expense_id" />
+		<result property="userId" column="user_id" />
+		<result property="userName" column="user_name" />
+		<result property="expenseName" column="expense_name" />
+		<result property="expenseDesc" column="expense_desc" />
+		<result property="expenseState" column="expense_state" />
+		<result property="expenseTotal" column="expense_total" />
+		<result property="expenseTime" column="expense_time" />
+	</resultMap>
+
+	<!-- 根据审核人查询报销单 -->
+	<select id="getLit" parameterType="ExpenseAccount" resultMap="eamap">
+
+		select x.*,y.* from expense_account x,user_info y where expense_id in
+		(
+		select a.expense_id
+		from
+		audit_history a,user_info b where
+		a.user_id=b.user_id
+		and a.user_id=#{userId}
+		) and x.user_id = y.user_id
+		<if test="userName!=null and userName!=''">
+			and y.user_name like #{userName}
+		</if>
+		<if test="expenseTime!=null and expenseTime!=''">
+			and x.expense_time = #{expenseTime}
+		</if>
+		order by x.expense_id desc
+		<if test="start!=-1">
+			limit #{start},#{length}
+		</if>
+	</select>
+
+	<!-- 获取总记录数 -->
+	<select id="getCountLong" parameterType="ExpenseAccount"
+		resultType="Long">
+
+		select count(1) from expense_account x,user_info y where expense_id in
+		(
+		select a.expense_id
+		from
+		audit_history a,user_info b where
+		a.user_id=b.user_id
+		and a.user_id=#{userId}
+		) and x.user_id = y.user_id
+		<if test="userName!=null and userName!=''">
+			and y.user_name like #{userName}
+		</if>
+		<if test="expenseTime!=null and expenseTime!=''">
+			and x.expense_time = #{expenseTime}
+		</if>
+	</select>
+
+
+	<!-- 根据报销单编号删除报销明细 -->
+	<delete id="deleteExpenseDetails" parameterType="Integer">
+		delete from
+		expense_details where expense_id=#{expenseId}
+	</delete>
+
+	<!-- 根据 报销单查询审核历史记录信息 -->
+	<select id="getAuditHistoryList" parameterType="ExpenseAccount"
+		resultType="Map">
+		select a.*,b.user_name
+		from audit_history a,user_info b
+		where a.user_id=b.user_id and a.expense_id=#{expenseId}
+	</select>
+
+	<!-- 根据报销单编号查询报销信息 -->
+	<select id="getExpenseAccount" parameterType="ExpenseAccount"
+		resultMap="eamap">
+		select * from expense_account where expense_id=#{expenseId}
+	</select>
+
+	<!-- 根据编号查询报销明细 -->
+	<select id="getExpenseDetailsList" parameterType="ExpenseAccount"
+		resultType="Map">
+		select a.*,b.cost_name,b.cost_desc
+		from
+		expense_details
+		a,cost_info b
+		where a.cost_id = b.cost_id and
+		a.expense_id=#{expenseId}
+	</select>
+
+	<!-- 查询报销单 -->
+	<select id="list" parameterType="ExpenseAccount" resultMap="eamap">
+		select a.*,b.user_name
+		from expense_account a,user_info b
+		where
+		a.user_id = b.user_id
+		<if test="expenseState!=null and expenseState!=''">
+			and a.expense_state = #{expenseState}
+		</if>
+		<if test="userName!=null and userName!=''">
+			and b.user_name like #{userName}
+		</if>
+		<if test="expenseTime!=null and expenseTime!=''">
+			and a.expense_time = #{expenseTime}
+		</if>
+		<if test="userId!=null and userId!=''">
+			and a.user_id = #{userId}
+		</if>
+
+		order by expense_id desc
+		<if test="start!=-1">
+			limit #{start},#{length}
+		</if>
+	</select>
+
+	<!-- 查询总记录数 -->
+	<select id="getcount" parameterType="ExpenseAccount" resultType="Long">
+		select count(1)
+		from expense_account a,user_info b
+		where
+		a.user_id =
+		b.user_id
+		<if test="expenseState!=null and expenseState!=''">
+			and a.expense_state = #{expenseState}
+		</if>
+		<if test="userName!=null and userName!=''">
+			and b.user_name like #{userName}
+		</if>
+		<if test="expenseTime!=null and expenseTime!=''">
+			and a.expense_time = #{expenseTime}
+		</if>
+	</select>
+
+	<!-- 添加报销单 -->
+	<insert id="addExpense" parameterType="ExpenseAccount"
+		useGeneratedKeys="true" keyProperty="expenseId">
+		insert into expense_account
+		(user_id,expense_name,expense_desc,expense_time,expense_state,expense_total)
+		values(#{userId},#{expenseName},#{expenseDesc},#{expenseTime},#{expenseState},#{expenseTotal})
+	</insert>
+
+	<!-- 添加报销明细 -->
+	<insert id="addExpenseDetails" parameterType="ExpenseDetails">
+		insert into
+		expense_details
+		(expense_id,cost_id,expense_details_amount)
+		values(#{expenseId},#{costId},#{expenseDetailsAmount})
+	</insert>
+
+	<!-- 添加审核历史记录信息 -->
+	<insert id="addAuditHistory" parameterType="AuditHistory">
+		insert into
+		audit_history (expense_id,user_id,audit_time,audit_state,audit_desc)
+		values(#{expenseId},#{userId},now(),#{auditState},#{auditDesc})
+	</insert>
+
+	<!-- 修改报销单 -->
+	<update id="updateExpenseAccount" parameterType="ExpenseAccount">
+		update expense_account
+		<set>
+			<if test="expenseName!=null and expenseName!=''">
+				expense_name = #{expenseName},
+			</if>
+			<if test="expenseTime!=null">
+				expense_time =#{expenseTime},
+			</if>
+			<if test="expenseState!=null and expenseState!=''">
+				expense_state=#{expenseState},
+			</if>
+			<if test="expenseTotal!=null and expenseTotal!=''">
+				expense_total=#{expenseTotal},
+			</if>
+
+		</set>
+		where expense_id = #{expenseId}
+	</update>
+</mapper>
